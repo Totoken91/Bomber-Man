@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bomber-Man Online</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Lobby Screen -->
+  <div id="lobby-screen" class="screen active">
+    <h1>BOMBER-MAN</h1>
+    <div class="lobby-container">
+      <div class="name-input">
+        <input type="text" id="player-name" placeholder="Ton pseudo..." maxlength="15">
+      </div>
+      <div class="lobby-actions">
+        <button id="btn-create">Créer une salle</button>
+      </div>
+      <div class="rooms-list">
+        <h2>Salles disponibles</h2>
+        <div id="rooms-container">
+          <p class="no-rooms">Aucune salle disponible</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waiting Room -->
+  <div id="waiting-screen" class="screen">
+    <h1>BOMBER-MAN</h1>
+    <div class="waiting-container">
+      <h2>Salle d'attente</h2>
+      <div id="players-list"></div>
+      <div class="waiting-actions">
+        <button id="btn-start" style="display:none">Lancer la partie</button>
+        <button id="btn-leave">Quitter la salle</button>
+      </div>
+      <p id="waiting-info">En attente de joueurs...</p>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <canvas id="game-canvas"></canvas>
+    <div id="game-hud">
+      <div id="hud-info"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="gameover-overlay" class="overlay">
+    <div class="overlay-content">
+      <h2 id="gameover-text">Game Over</h2>
+      <button id="btn-back-lobby">Retour au lobby</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/gameState.js"></script>
+  <script src="js/lobby.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
