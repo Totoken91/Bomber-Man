@@ -1,8 +1,5 @@
 (() => {
-  // Connect to server
-  Network.connect();
-
-  // Init lobby
+  // Init lobby (registers event listeners)
   Lobby.init();
 
   // Init renderer
@@ -94,4 +91,7 @@
     const alive = state.players.filter(p => p.alive);
     hud.textContent = `Joueurs en vie : ${alive.length}/${state.players.length}`;
   }
+
+  // Connect to server AFTER all listeners are registered
+  Network.connect();
 })();
