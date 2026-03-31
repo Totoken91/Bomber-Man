@@ -1,16 +1,7 @@
 const Renderer = (() => {
   const TILE_SIZE = 48;
+  const SPRITE_SIZE = 16;
   const PLAYER_COLORS = ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71'];
-  const POWERUP_COLORS = {
-    'bomb_up': '#9b59b6',
-    'fire_up': '#e67e22',
-    'speed_up': '#1abc9c'
-  };
-  const POWERUP_LABELS = {
-    'bomb_up': 'B+',
-    'fire_up': 'F+',
-    'speed_up': 'S+'
-  };
 
   let canvas, ctx;
   let gridCols = 15, gridRows = 13;
@@ -20,11 +11,22 @@ const Renderer = (() => {
     ctx = canvas.getContext('2d');
     canvas.width = gridCols * TILE_SIZE;
     canvas.height = gridRows * TILE_SIZE;
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  function drawSprite(name, px, py) {
+    const sprite = SpriteLoader.get(name);
+    if (sprite) {
+      ctx.drawImage(sprite, 0, 0, SPRITE_SIZE, SPRITE_SIZE, px, py, TILE_SIZE, TILE_SIZE);
+      return true;
+    }
+    return false;
   }
 
   function render(gameState) {
     if (!gameState || !gameState.map) return;
 
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw map
@@ -35,44 +37,23 @@ const Renderer = (() => {
         const px = x * TILE_SIZE;
         const py = y * TILE_SIZE;
 
-        switch (tile) {
-          case 0: // EMPTY
-            ctx.fillStyle = '#4a7c59';
-            break;
-          case 1: // WALL
-            ctx.fillStyle = '#5c5c5c';
-            break;
-          case 2: // BRICK
-            ctx.fillStyle = '#c0835a';
-            break;
-        }
-        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-
-        // Grid lines
-        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
-
-        // Brick pattern
-        if (tile === 2) {
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(px, py + TILE_SIZE / 2);
-          ctx.lineTo(px + TILE_SIZE, py + TILE_SIZE / 2);
-          ctx.moveTo(px + TILE_SIZE / 2, py);
-          ctx.lineTo(px + TILE_SIZE / 2, py + TILE_SIZE / 2);
-          ctx.stroke();
+        // Always draw floor first
+        if (!drawSprite('floor', px, py)) {
+          ctx.fillStyle = '#4a7c59';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
         }
 
-        // Wall 3D effect
+        // Draw wall or brick on top of floor
         if (tile === 1) {
-          ctx.fillStyle = 'rgba(255,255,255,0.1)';
-          ctx.fillRect(px, py, TILE_SIZE, 3);
-          ctx.fillRect(px, py, 3, TILE_SIZE);
-          ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          ctx.fillRect(px, py + TILE_SIZE - 3, TILE_SIZE, 3);
-          ctx.fillRect(px + TILE_SIZE - 3, py, 3, TILE_SIZE);
+          if (!drawSprite('wall', px, py)) {
+            ctx.fillStyle = '#5c5c5c';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          }
+        } else if (tile === 2) {
+          if (!drawSprite('brick', px, py)) {
+            ctx.fillStyle = '#c0835a';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          }
         }
       }
     }
@@ -83,32 +64,23 @@ const Renderer = (() => {
         const px = pu.x * TILE_SIZE;
         const py = pu.y * TILE_SIZE;
 
-        // Background
-        ctx.fillStyle = '#4a7c59';
-        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-
-        // Power-up icon
-        ctx.fillStyle = POWERUP_COLORS[pu.type] || '#fff';
-        ctx.beginPath();
-        ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, TILE_SIZE * 0.35, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Label
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(POWERUP_LABELS[pu.type] || '?', px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+        const spriteName = 'powerup_' + pu.type;
+        if (!drawSprite(spriteName, px, py)) {
+          // Fallback
+          ctx.fillStyle = '#9b59b6';
+          ctx.beginPath();
+          ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, TILE_SIZE * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
-    // Draw bombs
+    // Draw bombs (keep canvas-drawn style)
     if (gameState.bombs) {
       for (const bomb of gameState.bombs) {
         const px = bomb.x * TILE_SIZE + TILE_SIZE / 2;
         const py = bomb.y * TILE_SIZE + TILE_SIZE / 2;
 
-        // Pulsing animation
         const pulse = 1 + Math.sin(Date.now() / 150) * 0.1;
         const r = TILE_SIZE * 0.3 * pulse;
 
@@ -117,7 +89,6 @@ const Renderer = (() => {
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fill();
 
-        // Fuse
         ctx.strokeStyle = '#e67e22';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -125,7 +96,6 @@ const Renderer = (() => {
         ctx.lineTo(px + 4, py - r - 8);
         ctx.stroke();
 
-        // Spark
         ctx.fillStyle = '#f39c12';
         ctx.beginPath();
         ctx.arc(px + 4, py - r - 8, 3, 0, Math.PI * 2);
@@ -133,7 +103,7 @@ const Renderer = (() => {
       }
     }
 
-    // Draw explosions
+    // Draw explosions (keep canvas-drawn style)
     if (gameState.explosions) {
       for (const explosion of gameState.explosions) {
         for (const cell of explosion.cells) {
@@ -158,49 +128,40 @@ const Renderer = (() => {
       for (const player of gameState.players) {
         if (!player.alive) continue;
 
-        const px = player.x * TILE_SIZE + TILE_SIZE / 2;
-        const py = player.y * TILE_SIZE + TILE_SIZE / 2;
-        const color = PLAYER_COLORS[player.colorIndex] || '#fff';
+        const drawX = Math.round(player.x * TILE_SIZE);
+        const drawY = Math.round(player.y * TILE_SIZE);
+        const centerX = drawX + TILE_SIZE / 2;
+        const centerY = drawY + TILE_SIZE / 2;
 
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
-        ctx.ellipse(px, py + TILE_SIZE * 0.3, TILE_SIZE * 0.28, TILE_SIZE * 0.12, 0, 0, Math.PI * 2);
+        ctx.ellipse(centerX, drawY + TILE_SIZE * 0.85, TILE_SIZE * 0.3, TILE_SIZE * 0.1, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Body
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(px, py - 2, TILE_SIZE * 0.32, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Border
-        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(px - 5, py - 6, 4, 0, Math.PI * 2);
-        ctx.arc(px + 5, py - 6, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(px - 4, py - 5, 2, 0, Math.PI * 2);
-        ctx.arc(px + 6, py - 5, 2, 0, Math.PI * 2);
-        ctx.fill();
+        // Player sprite
+        const spriteName = 'player_' + player.colorIndex;
+        if (!drawSprite(spriteName, drawX, drawY)) {
+          // Fallback to colored circle
+          const color = PLAYER_COLORS[player.colorIndex] || '#fff';
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY - 2, TILE_SIZE * 0.32, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
 
         // Name tag
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         const nameWidth = ctx.measureText(player.name).width;
-        ctx.fillRect(px - nameWidth / 2 - 4, py - TILE_SIZE * 0.5 - 16, nameWidth + 8, 16);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(centerX - nameWidth / 2 - 4, drawY - 14, nameWidth + 8, 16);
         ctx.fillStyle = '#fff';
-        ctx.fillText(player.name, px, py - TILE_SIZE * 0.5 - 2);
+        ctx.fillText(player.name, centerX, drawY);
       }
     }
   }

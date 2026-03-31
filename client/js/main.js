@@ -2,9 +2,14 @@
   // Init lobby (registers event listeners)
   Lobby.init();
 
-  // Init renderer
+  // Load sprites then init renderer
   const canvas = document.getElementById('game-canvas');
   Renderer.init(canvas);
+  SpriteLoader.load().then(() => {
+    console.log('Sprites loaded');
+  }).catch(err => {
+    console.warn('Sprite loading failed, using fallback:', err);
+  });
 
   let gameRunning = false;
   let inputInterval = null;

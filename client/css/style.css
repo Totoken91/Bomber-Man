@@ -184,6 +184,8 @@ button:active {
 #game-canvas {
   border: 3px solid #0f3460;
   border-radius: 4px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 #game-hud {
