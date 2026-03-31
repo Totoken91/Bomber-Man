@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
   });
 
   // Start game
-  socket.on('game:start', ({ mapSize } = {}) => {
+  socket.on('game:start', ({ mapSize, theme, layout } = {}) => {
     const room = lobby.getRoom(socket.id);
     const roomId = lobby.getRoomId(socket.id);
     if (!room || room.started) return;
@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    room.start(mapSize);
+    room.start(mapSize, theme, layout);
 
     // Send start state to each player individually (with their ID)
     for (const [playerId] of room.players) {

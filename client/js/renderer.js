@@ -4,6 +4,7 @@ const Renderer = (() => {
 
   let canvas, ctx;
   let gridCols = 15, gridRows = 13;
+  let currentTheme = 'dungeon';
 
   function init(canvasElement) {
     canvas = canvasElement;
@@ -19,6 +20,10 @@ const Renderer = (() => {
     canvas.width = gridCols * TILE_SIZE;
     canvas.height = gridRows * TILE_SIZE;
     ctx.imageSmoothingEnabled = false;
+  }
+
+  function setTheme(themeName) {
+    currentTheme = themeName || 'dungeon';
   }
 
   function drawSprite(name, px, py) {
@@ -44,18 +49,19 @@ const Renderer = (() => {
         const px = x * TILE_SIZE;
         const py = y * TILE_SIZE;
 
-        if (!drawSprite('floor', px, py)) {
+        const theme = SpriteLoader.getTheme(currentTheme);
+        if (!drawSprite(theme.floor, px, py)) {
           ctx.fillStyle = '#4a7c59';
           ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
         }
 
         if (tile === 1) {
-          if (!drawSprite('wall', px, py)) {
+          if (!drawSprite(theme.wall, px, py)) {
             ctx.fillStyle = '#5c5c5c';
             ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
           }
         } else if (tile === 2) {
-          if (!drawSprite('brick', px, py)) {
+          if (!drawSprite(theme.brick, px, py)) {
             ctx.fillStyle = '#c0835a';
             ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
           }
@@ -202,5 +208,5 @@ const Renderer = (() => {
     }
   }
 
-  return { init, resize, render, TILE_SIZE };
+  return { init, resize, setTheme, render, TILE_SIZE };
 })();

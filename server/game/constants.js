@@ -29,6 +29,12 @@ module.exports = {
     large:  { cols: 19, rows: 15 }
   },
 
+  // Map themes (visual only, handled client-side)
+  MAP_THEMES: ['dungeon', 'fortress', 'crypt'],
+
+  // Map layouts (affect generation algorithm)
+  MAP_LAYOUTS: ['classic', 'arena', 'corridors', 'maze'],
+
   // Spawn positions are calculated dynamically based on map size
   getSpawnPositions(cols, rows) {
     return [

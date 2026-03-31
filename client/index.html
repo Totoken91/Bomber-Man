@@ -34,12 +34,31 @@
     <div class="waiting-container">
       <h2>Salle d'attente</h2>
       <div id="players-list"></div>
-      <div id="map-size-selector" class="map-size-selector" style="display:none">
-        <h3>Taille de la map</h3>
-        <div class="map-sizes">
-          <button class="map-size-btn" data-size="small">Petite<br><span>11x9</span></button>
-          <button class="map-size-btn active" data-size="normal">Normale<br><span>15x13</span></button>
-          <button class="map-size-btn" data-size="large">Grande<br><span>19x15</span></button>
+      <div id="host-options" style="display:none">
+        <div class="option-group">
+          <h3>Taille</h3>
+          <div class="option-row">
+            <button class="opt-btn map-size-btn" data-size="small">Petite<br><span>11x9</span></button>
+            <button class="opt-btn map-size-btn active" data-size="normal">Normale<br><span>15x13</span></button>
+            <button class="opt-btn map-size-btn" data-size="large">Grande<br><span>19x15</span></button>
+          </div>
+        </div>
+        <div class="option-group">
+          <h3>Thème</h3>
+          <div class="option-row" id="theme-selector">
+            <button class="opt-btn theme-btn active" data-theme="dungeon">Donjon</button>
+            <button class="opt-btn theme-btn" data-theme="fortress">Forteresse</button>
+            <button class="opt-btn theme-btn" data-theme="crypt">Crypte</button>
+          </div>
+        </div>
+        <div class="option-group">
+          <h3>Layout</h3>
+          <div class="option-row" id="layout-selector">
+            <button class="opt-btn layout-btn active" data-layout="classic">Classique</button>
+            <button class="opt-btn layout-btn" data-layout="arena">Arène</button>
+            <button class="opt-btn layout-btn" data-layout="corridors">Couloirs</button>
+            <button class="opt-btn layout-btn" data-layout="maze">Labyrinthe</button>
+          </div>
         </div>
       </div>
       <div class="waiting-actions">

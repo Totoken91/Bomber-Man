@@ -2,9 +2,18 @@ const SpriteLoader = (() => {
   const sprites = {};
   const SPRITE_PATH = 'assets/sprites/tiny-dungeon/Tiles/';
   const SPRITE_MAP = {
-    floor:           'tile_0048.png',
-    wall:            'tile_0040.png',
-    brick:           'tile_0063.png',
+    // Dungeon theme (default)
+    floor_dungeon:   'tile_0048.png',
+    wall_dungeon:    'tile_0040.png',
+    brick_dungeon:   'tile_0063.png',
+    // Fortress theme
+    floor_fortress:  'tile_0055.png',
+    wall_fortress:   'tile_0035.png',
+    brick_fortress:  'tile_0065.png',
+    // Crypt theme
+    floor_crypt:     'tile_0030.png',
+    wall_crypt:      'tile_0025.png',
+    brick_crypt:     'tile_0070.png',
     // Skins (selectable characters)
     skin_0:          'tile_0097.png',
     skin_1:          'tile_0108.png',
@@ -26,7 +35,19 @@ const SpriteLoader = (() => {
     powerup_shield:  'tile_0066.png',
   };
 
-  // Skin metadata for the lobby selector
+  const THEMES = {
+    dungeon:  { floor: 'floor_dungeon',  wall: 'wall_dungeon',  brick: 'brick_dungeon',  name: 'Donjon' },
+    fortress: { floor: 'floor_fortress', wall: 'wall_fortress', brick: 'brick_fortress', name: 'Forteresse' },
+    crypt:    { floor: 'floor_crypt',    wall: 'wall_crypt',    brick: 'brick_crypt',    name: 'Crypte' },
+  };
+
+  const LAYOUTS = [
+    { id: 'classic',   name: 'Classique' },
+    { id: 'arena',     name: 'Arène' },
+    { id: 'corridors', name: 'Couloirs' },
+    { id: 'maze',      name: 'Labyrinthe' },
+  ];
+
   const SKINS = [
     { id: 0, name: 'Chevalier' },
     { id: 1, name: 'Slime' },
@@ -68,12 +89,22 @@ const SpriteLoader = (() => {
   }
 
   function isLoaded() { return loaded; }
-
   function getSkins() { return SKINS; }
+  function getThemes() { return THEMES; }
+  function getLayouts() { return LAYOUTS; }
+
+  function getTheme(themeId) {
+    return THEMES[themeId] || THEMES.dungeon;
+  }
 
   function getSkinSpritePath(skinId) {
     return SPRITE_PATH + SPRITE_MAP['skin_' + skinId];
   }
 
-  return { load, get, isLoaded, getSkins, getSkinSpritePath, SPRITE_PATH, SPRITE_MAP };
+  function getThemeSpritePath(themeId, tileType) {
+    const theme = THEMES[themeId] || THEMES.dungeon;
+    return SPRITE_PATH + SPRITE_MAP[theme[tileType]];
+  }
+
+  return { load, get, isLoaded, getSkins, getThemes, getLayouts, getTheme, getSkinSpritePath, getThemeSpritePath, SPRITE_PATH, SPRITE_MAP };
 })();

@@ -28,9 +28,12 @@
       winnerName: null
     });
 
-    // Resize canvas to match map size
+    // Resize canvas and set theme
     if (data.cols && data.rows) {
       Renderer.resize(data.cols, data.rows);
+    }
+    if (data.theme) {
+      Renderer.setTheme(data.theme);
     }
 
     Lobby.showScreen('game-screen');

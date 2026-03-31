@@ -59,7 +59,7 @@ class GameRoom {
     }
   }
 
-  start(mapSize) {
+  start(mapSize, theme, layout) {
     if (this.started) return;
 
     // Set map size
@@ -67,9 +67,11 @@ class GameRoom {
     const sizeConfig = MAP_SIZES[this.mapSize] || MAP_SIZES.normal;
     this.cols = sizeConfig.cols;
     this.rows = sizeConfig.rows;
+    this.theme = theme || 'dungeon';
+    this.layout = layout || 'classic';
 
-    // Generate map
-    this.map = new GameMap(this.cols, this.rows);
+    // Generate map with layout
+    this.map = new GameMap(this.cols, this.rows, this.layout);
 
     // Reposition players to correct spawns for this map size
     const spawns = getSpawnPositions(this.cols, this.rows);
@@ -339,6 +341,8 @@ class GameRoom {
       map: this.map.serialize(),
       cols: this.cols,
       rows: this.rows,
+      theme: this.theme,
+      layout: this.layout,
       players: [...this.players.values()].map(p => p.serialize())
     };
   }

@@ -3,6 +3,8 @@ const Lobby = (() => {
   let isHost = false;
   let selectedSkin = 0;
   let selectedMapSize = 'normal';
+  let selectedTheme = 'dungeon';
+  let selectedLayout = 'classic';
 
   function init() {
     const btnCreate = document.getElementById('btn-create');
@@ -11,17 +13,12 @@ const Lobby = (() => {
     const btnBackLobby = document.getElementById('btn-back-lobby');
     const nameInput = document.getElementById('player-name');
 
-    // Build skin selector
     buildSkinSelector();
 
-    // Map size buttons
-    document.querySelectorAll('.map-size-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.map-size-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedMapSize = btn.dataset.size;
-      });
-    });
+    // Option buttons (map size, theme, layout)
+    setupOptionButtons('.map-size-btn', 'size', v => selectedMapSize = v);
+    setupOptionButtons('.theme-btn', 'theme', v => selectedTheme = v);
+    setupOptionButtons('.layout-btn', 'layout', v => selectedLayout = v);
 
     btnCreate.addEventListener('click', () => {
       const name = getPlayerName();
@@ -30,7 +27,7 @@ const Lobby = (() => {
     });
 
     btnStart.addEventListener('click', () => {
-      Network.startGame(selectedMapSize);
+      Network.startGame(selectedMapSize, selectedTheme, selectedLayout);
     });
 
     btnLeave.addEventListener('click', () => {
@@ -53,16 +50,13 @@ const Lobby = (() => {
       if (e.key === 'Enter') btnCreate.click();
     });
 
-    // Network events
     Network.on('lobby:rooms', (rooms) => {
       renderRooms(rooms);
     });
 
     Network.on('lobby:joined', ({ roomId, playerId }) => {
       currentRoomId = roomId;
-      if (!isHost) {
-        isHost = true;
-      }
+      if (!isHost) isHost = true;
       showScreen('waiting-screen');
     });
 
@@ -73,20 +67,30 @@ const Lobby = (() => {
       const btnStart = document.getElementById('btn-start');
       btnStart.style.display = (amHost && players.length >= 2) ? 'block' : 'none';
 
-      // Show map size selector only for host
-      const mapSizeSelector = document.getElementById('map-size-selector');
-      mapSizeSelector.style.display = amHost ? 'block' : 'none';
+      // Show host options only for host
+      const hostOptions = document.getElementById('host-options');
+      hostOptions.style.display = amHost ? 'block' : 'none';
 
       const info = document.getElementById('waiting-info');
       if (players.length < 2) {
         info.textContent = 'En attente de joueurs... (min. 2)';
       } else {
-        info.textContent = amHost ? 'Choisis la taille et lance !' : 'En attente du lancement...';
+        info.textContent = amHost ? 'Configure et lance la partie !' : 'En attente du lancement...';
       }
     });
 
     Network.on('lobby:error', (msg) => {
       alert(msg);
+    });
+  }
+
+  function setupOptionButtons(selector, dataAttr, setter) {
+    document.querySelectorAll(selector).forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setter(btn.dataset[dataAttr]);
+      });
     });
   }
 

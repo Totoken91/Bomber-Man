@@ -42,8 +42,8 @@ const Network = (() => {
     if (socket) socket.emit('lobby:leave');
   }
 
-  function startGame(mapSize) {
-    if (socket) socket.emit('game:start', { mapSize });
+  function startGame(mapSize, theme, layout) {
+    if (socket) socket.emit('game:start', { mapSize, theme, layout });
   }
 
   function on(event, callback) {

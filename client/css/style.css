@@ -198,26 +198,30 @@ button:active {
   box-shadow: 0 0 8px rgba(255, 107, 53, 0.6);
 }
 
-/* Map size selector */
-.map-size-selector {
+/* Host options (map size, theme, layout) */
+#host-options {
   margin-bottom: 15px;
 }
 
-.map-size-selector h3 {
+.option-group {
+  margin-bottom: 10px;
+}
+
+.option-group h3 {
   color: #f4a261;
-  font-size: 1rem;
-  margin-bottom: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
 }
 
-.map-sizes {
+.option-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
-.map-size-btn {
+.opt-btn {
   flex: 1;
-  padding: 10px 8px;
-  font-size: 0.85rem;
+  padding: 8px 6px;
+  font-size: 0.8rem;
   background: #1a1a2e;
   color: #aaa;
   border: 2px solid #0f3460;
@@ -226,17 +230,17 @@ button:active {
   line-height: 1.3;
 }
 
-.map-size-btn span {
-  font-size: 0.75rem;
+.opt-btn span {
+  font-size: 0.7rem;
   color: #666;
 }
 
-.map-size-btn:hover {
+.opt-btn:hover {
   border-color: #f4a261;
   color: #eee;
 }
 
-.map-size-btn.active {
+.opt-btn.active {
   border-color: #ff6b35;
   color: #fff;
   background: #0f3460;
