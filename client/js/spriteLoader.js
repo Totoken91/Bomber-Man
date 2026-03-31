@@ -7,9 +7,9 @@ const SpriteLoader = (() => {
     wall_dungeon:    'tile_0040.png',
     brick_dungeon:   'tile_0063.png',
     // Fortress theme
-    floor_fortress:  'tile_0055.png',
-    wall_fortress:   'tile_0035.png',
-    brick_fortress:  'tile_0065.png',
+    floor_fortress:  'tile_0042.png',
+    wall_fortress:   'tile_0014.png',
+    brick_fortress:  'tile_0072.png',
     // Crypt theme
     floor_crypt:     'tile_0050.png',
     wall_crypt:      'tile_0003.png',
