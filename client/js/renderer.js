@@ -123,17 +123,53 @@ const Renderer = (() => {
 
         // Shield glow (if active)
         if (player.hasShield) {
-          const shieldPulse = 0.5 + Math.sin(Date.now() / 200) * 0.3;
-          ctx.strokeStyle = `rgba(52, 152, 219, ${shieldPulse})`;
-          ctx.lineWidth = 3;
+          const t = Date.now();
+          const pulse = 0.5 + Math.sin(t / 180) * 0.5;
+          const fastPulse = 0.5 + Math.sin(t / 80) * 0.5;
+          const rot = (t / 600) % (Math.PI * 2);
+
+          // Outer expanding ripple
+          const rippleRadius = TILE_SIZE * (0.48 + Math.sin(t / 250) * 0.08);
+          ctx.strokeStyle = `rgba(100, 200, 255, ${0.3 + pulse * 0.4})`;
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(centerX, centerY, TILE_SIZE * 0.45, 0, Math.PI * 2);
+          ctx.arc(centerX, centerY, rippleRadius + 6, 0, Math.PI * 2);
           ctx.stroke();
 
-          ctx.fillStyle = `rgba(52, 152, 219, ${shieldPulse * 0.2})`;
+          // Inner filled glow
+          ctx.fillStyle = `rgba(52, 152, 219, ${0.08 + pulse * 0.12})`;
           ctx.beginPath();
-          ctx.arc(centerX, centerY, TILE_SIZE * 0.45, 0, Math.PI * 2);
+          ctx.arc(centerX, centerY, TILE_SIZE * 0.48, 0, Math.PI * 2);
           ctx.fill();
+
+          // Main shield ring
+          ctx.strokeStyle = `rgba(52, 220, 255, ${0.6 + pulse * 0.4})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, TILE_SIZE * 0.46, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Rotating shield segments (4 arcs spaced 90°)
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = `rgba(180, 240, 255, ${0.5 + fastPulse * 0.5})`;
+          for (let s = 0; s < 4; s++) {
+            const start = rot + s * Math.PI / 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, TILE_SIZE * 0.46, start, start + Math.PI * 0.35);
+            ctx.stroke();
+          }
+
+          // Rotating sparkle points (6 small dots)
+          ctx.fillStyle = `rgba(220, 250, 255, ${0.7 + fastPulse * 0.3})`;
+          for (let s = 0; s < 6; s++) {
+            const angle = -rot * 1.5 + s * Math.PI / 3;
+            const r = TILE_SIZE * 0.5;
+            const sx = centerX + Math.cos(angle) * r;
+            const sy = centerY + Math.sin(angle) * r;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
         // Player sprite (use skinId)
@@ -154,9 +190,9 @@ const Renderer = (() => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         const nameWidth = ctx.measureText(player.name).width;
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillStyle = player.hasShield ? 'rgba(20, 80, 160, 0.85)' : 'rgba(0,0,0,0.6)';
         ctx.fillRect(centerX - nameWidth / 2 - 4, drawY - 14, nameWidth + 8, 16);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = player.hasShield ? '#7de8ff' : '#fff';
         ctx.fillText(player.name, centerX, drawY);
       }
     }
