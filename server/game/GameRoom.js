@@ -44,7 +44,13 @@ class GameRoom {
   }
 
   handleInput(socketId, input) {
-    this.inputs.set(socketId, input);
+    // Sticky bomb flag: preserve bomb request until consumed by tick
+    const existing = this.inputs.get(socketId);
+    if (existing && existing.bomb && !input.bomb) {
+      this.inputs.set(socketId, { ...input, bomb: true });
+    } else {
+      this.inputs.set(socketId, input);
+    }
   }
 
   start() {
@@ -104,17 +110,78 @@ class GameRoom {
         const newX = player.x + dx * moveAmount;
         const newY = player.y + dy * moveAmount;
 
-        // Check collision
+        // Try full move first
         if (this.canMoveTo(player, newX, newY)) {
           player.x = newX;
           player.y = newY;
         } else {
-          // Snap to nearest tile center on the blocked axis
-          if (dx !== 0) {
+          // Axis-separated collision: try each axis independently
+          let movedX = false, movedY = false;
+
+          if (dx !== 0 && this.canMoveTo(player, newX, player.y)) {
+            player.x = newX;
+            movedX = true;
+          }
+          if (dy !== 0 && this.canMoveTo(player, player.x, newY)) {
+            player.y = newY;
+            movedY = true;
+          }
+
+          // Corner assist: if blocked on primary axis, nudge perpendicular
+          // axis toward nearest tile center to slide around corners
+          const CORNER_THRESHOLD = 0.4;
+          const NUDGE_SPEED = 3.0;
+          const nudgeAmount = NUDGE_SPEED * (dt / 1000);
+
+          if (dx !== 0 && !movedX) {
+            const targetY = Math.round(player.y);
+            const offsetY = targetY - player.y;
+            if (Math.abs(offsetY) > 0.01 && Math.abs(offsetY) < CORNER_THRESHOLD) {
+              const nudgeY = Math.sign(offsetY) * Math.min(nudgeAmount, Math.abs(offsetY));
+              if (this.canMoveTo(player, player.x, player.y + nudgeY)) {
+                player.y += nudgeY;
+              }
+            }
+          }
+
+          if (dy !== 0 && !movedY) {
+            const targetX = Math.round(player.x);
+            const offsetX = targetX - player.x;
+            if (Math.abs(offsetX) > 0.01 && Math.abs(offsetX) < CORNER_THRESHOLD) {
+              const nudgeX = Math.sign(offsetX) * Math.min(nudgeAmount, Math.abs(offsetX));
+              if (this.canMoveTo(player, player.x + nudgeX, player.y)) {
+                player.x += nudgeX;
+              }
+            }
+          }
+
+          // Snap only if we didn't move at all
+          if (!movedX && dx !== 0) {
             player.x = Math.round(player.x);
           }
-          if (dy !== 0) {
+          if (!movedY && dy !== 0) {
             player.y = Math.round(player.y);
+          }
+        }
+
+        // Auto-align: when moving along one axis, snap perpendicular axis
+        // toward tile center if very close (magnetic lane effect)
+        const ALIGN_THRESHOLD = 0.15;
+        const ALIGN_SPEED = 6.0;
+        const alignAmount = ALIGN_SPEED * (dt / 1000);
+
+        if (dx !== 0) {
+          const nearestY = Math.round(player.y);
+          const yOff = nearestY - player.y;
+          if (Math.abs(yOff) > 0.001 && Math.abs(yOff) < ALIGN_THRESHOLD) {
+            player.y += Math.sign(yOff) * Math.min(alignAmount, Math.abs(yOff));
+          }
+        }
+        if (dy !== 0) {
+          const nearestX = Math.round(player.x);
+          const xOff = nearestX - player.x;
+          if (Math.abs(xOff) > 0.001 && Math.abs(xOff) < ALIGN_THRESHOLD) {
+            player.x += Math.sign(xOff) * Math.min(alignAmount, Math.abs(xOff));
           }
         }
       }

@@ -38,7 +38,7 @@
         const input = Input.getInput();
         Network.sendInput(input);
       }
-    }, 1000 / 30); // 30 inputs per second
+    }, 1000 / 20); // 20 inputs per second, matching server tick rate
 
     // Start render loop
     requestAnimationFrame(renderLoop);

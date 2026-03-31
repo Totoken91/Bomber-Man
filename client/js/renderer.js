@@ -75,35 +75,7 @@ const Renderer = (() => {
       }
     }
 
-    // Draw bombs (keep canvas-drawn style)
-    if (gameState.bombs) {
-      for (const bomb of gameState.bombs) {
-        const px = bomb.x * TILE_SIZE + TILE_SIZE / 2;
-        const py = bomb.y * TILE_SIZE + TILE_SIZE / 2;
-
-        const pulse = 1 + Math.sin(Date.now() / 150) * 0.1;
-        const r = TILE_SIZE * 0.3 * pulse;
-
-        ctx.fillStyle = '#2c3e50';
-        ctx.beginPath();
-        ctx.arc(px, py, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = '#e67e22';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, py - r);
-        ctx.lineTo(px + 4, py - r - 8);
-        ctx.stroke();
-
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(px + 4, py - r - 8, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Draw explosions (keep canvas-drawn style)
+    // Draw explosions
     if (gameState.explosions) {
       for (const explosion of gameState.explosions) {
         for (const cell of explosion.cells) {
@@ -162,6 +134,58 @@ const Renderer = (() => {
         ctx.fillRect(centerX - nameWidth / 2 - 4, drawY - 14, nameWidth + 8, 16);
         ctx.fillStyle = '#fff';
         ctx.fillText(player.name, centerX, drawY);
+      }
+    }
+
+    // Draw bombs (AFTER players so they're always visible)
+    if (gameState.bombs) {
+      for (const bomb of gameState.bombs) {
+        const px = bomb.x * TILE_SIZE + TILE_SIZE / 2;
+        const py = bomb.y * TILE_SIZE + TILE_SIZE / 2;
+
+        const pulse = 1 + Math.sin(Date.now() / 150) * 0.12;
+        const r = TILE_SIZE * 0.38 * pulse;
+
+        // Red glow for visibility
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.25)';
+        ctx.beginPath();
+        ctx.arc(px, py, r + 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bomb body
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Red outline for contrast
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Fuse
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px, py - r);
+        ctx.lineTo(px + 4, py - r - 8);
+        ctx.stroke();
+
+        // Spark
+        ctx.fillStyle = '#f39c12';
+        ctx.beginPath();
+        ctx.arc(px + 4, py - r - 8, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Timer ring indicator
+        if (bomb.timer !== undefined) {
+          const timerRatio = Math.max(0, bomb.timer / 3000);
+          ctx.strokeStyle = `rgba(241, 196, 15, ${0.5 + 0.5 * (1 - timerRatio)})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(px, py, r + 3, -Math.PI / 2, -Math.PI / 2 + timerRatio * Math.PI * 2);
+          ctx.stroke();
+        }
       }
     }
   }
