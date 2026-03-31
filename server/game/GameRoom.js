@@ -83,6 +83,9 @@ class GameRoom {
       i++;
     }
 
+    // Clear any stale inputs from lobby
+    this.inputs.clear();
+
     this.started = true;
     this.gameOver = false;
     const tickMs = 1000 / TICK_RATE;

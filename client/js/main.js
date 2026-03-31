@@ -16,6 +16,9 @@
 
   // Game start event
   Network.on('game:start', (data) => {
+    // Clear any stale input (prevents accidental bomb on spawn)
+    Input.reset();
+
     GameState.setMyId(data.yourId);
     GameState.setMap(data.map);
     GameState.update({

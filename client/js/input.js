@@ -28,5 +28,10 @@ const Input = (() => {
     return { direction, bomb };
   }
 
-  return { getInput };
+  function reset() {
+    bombPressed = false;
+    for (const key in keys) keys[key] = false;
+  }
+
+  return { getInput, reset };
 })();
