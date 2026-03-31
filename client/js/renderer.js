@@ -1,7 +1,6 @@
 const Renderer = (() => {
   const TILE_SIZE = 48;
   const SPRITE_SIZE = 16;
-  const PLAYER_COLORS = ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71'];
 
   let canvas, ctx;
   let gridCols = 15, gridRows = 13;
@@ -9,6 +8,14 @@ const Renderer = (() => {
   function init(canvasElement) {
     canvas = canvasElement;
     ctx = canvas.getContext('2d');
+    canvas.width = gridCols * TILE_SIZE;
+    canvas.height = gridRows * TILE_SIZE;
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  function resize(cols, rows) {
+    gridCols = cols;
+    gridRows = rows;
     canvas.width = gridCols * TILE_SIZE;
     canvas.height = gridRows * TILE_SIZE;
     ctx.imageSmoothingEnabled = false;
@@ -37,13 +44,11 @@ const Renderer = (() => {
         const px = x * TILE_SIZE;
         const py = y * TILE_SIZE;
 
-        // Always draw floor first
         if (!drawSprite('floor', px, py)) {
           ctx.fillStyle = '#4a7c59';
           ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
         }
 
-        // Draw wall or brick on top of floor
         if (tile === 1) {
           if (!drawSprite('wall', px, py)) {
             ctx.fillStyle = '#5c5c5c';
@@ -66,7 +71,6 @@ const Renderer = (() => {
 
         const spriteName = 'powerup_' + pu.type;
         if (!drawSprite(spriteName, px, py)) {
-          // Fallback
           ctx.fillStyle = '#9b59b6';
           ctx.beginPath();
           ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, TILE_SIZE * 0.35, 0, Math.PI * 2);
@@ -111,12 +115,26 @@ const Renderer = (() => {
         ctx.ellipse(centerX, drawY + TILE_SIZE * 0.85, TILE_SIZE * 0.3, TILE_SIZE * 0.1, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Player sprite
-        const spriteName = 'player_' + player.colorIndex;
+        // Shield glow (if active)
+        if (player.hasShield) {
+          const shieldPulse = 0.5 + Math.sin(Date.now() / 200) * 0.3;
+          ctx.strokeStyle = `rgba(52, 152, 219, ${shieldPulse})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, TILE_SIZE * 0.45, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = `rgba(52, 152, 219, ${shieldPulse * 0.2})`;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, TILE_SIZE * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Player sprite (use skinId)
+        const skinId = player.skinId !== undefined ? player.skinId : 0;
+        const spriteName = 'skin_' + skinId;
         if (!drawSprite(spriteName, drawX, drawY)) {
-          // Fallback to colored circle
-          const color = PLAYER_COLORS[player.colorIndex] || '#fff';
-          ctx.fillStyle = color;
+          ctx.fillStyle = '#f1c40f';
           ctx.beginPath();
           ctx.arc(centerX, centerY - 2, TILE_SIZE * 0.32, 0, Math.PI * 2);
           ctx.fill();
@@ -146,24 +164,20 @@ const Renderer = (() => {
         const pulse = 1 + Math.sin(Date.now() / 150) * 0.12;
         const r = TILE_SIZE * 0.38 * pulse;
 
-        // Red glow for visibility
         ctx.fillStyle = 'rgba(231, 76, 60, 0.25)';
         ctx.beginPath();
         ctx.arc(px, py, r + 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bomb body
         ctx.fillStyle = '#2c3e50';
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fill();
 
-        // Red outline for contrast
         ctx.strokeStyle = '#e74c3c';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Fuse
         ctx.strokeStyle = '#e67e22';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -171,13 +185,11 @@ const Renderer = (() => {
         ctx.lineTo(px + 4, py - r - 8);
         ctx.stroke();
 
-        // Spark
         ctx.fillStyle = '#f39c12';
         ctx.beginPath();
         ctx.arc(px + 4, py - r - 8, 4, 0, Math.PI * 2);
         ctx.fill();
 
-        // Timer ring indicator
         if (bomb.timer !== undefined) {
           const timerRatio = Math.max(0, bomb.timer / 3000);
           ctx.strokeStyle = `rgba(241, 196, 15, ${0.5 + 0.5 * (1 - timerRatio)})`;
@@ -190,5 +202,5 @@ const Renderer = (() => {
     }
   }
 
-  return { init, render, TILE_SIZE };
+  return { init, resize, render, TILE_SIZE };
 })();

@@ -8,22 +8,22 @@ class LobbyManager {
     this.nextRoomId = 1;
   }
 
-  createRoom(socketId, playerName) {
+  createRoom(socketId, playerName, skinId) {
     const roomId = `room_${this.nextRoomId++}`;
     const room = new GameRoom(roomId);
-    room.addPlayer(socketId, playerName);
+    room.addPlayer(socketId, playerName, skinId);
     this.rooms.set(roomId, room);
     this.playerRooms.set(socketId, roomId);
     return { roomId, room };
   }
 
-  joinRoom(roomId, socketId, playerName) {
+  joinRoom(roomId, socketId, playerName, skinId) {
     const room = this.rooms.get(roomId);
     if (!room) return { error: 'Room not found' };
     if (room.started) return { error: 'Game already started' };
     if (room.playerCount >= MAX_PLAYERS) return { error: 'Room is full' };
 
-    room.addPlayer(socketId, playerName);
+    room.addPlayer(socketId, playerName, skinId);
     this.playerRooms.set(socketId, roomId);
     return { roomId, room };
   }

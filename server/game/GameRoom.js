@@ -1,4 +1,4 @@
-const { TICK_RATE, SPAWN_POSITIONS, EMPTY, BRICK, MAX_PLAYERS } = require('./constants');
+const { TICK_RATE, EMPTY, BRICK, MAX_PLAYERS, MAP_SIZES, getSpawnPositions } = require('./constants');
 const GameMap = require('./GameMap');
 const Player = require('./Player');
 const Bomb = require('./Bomb');
@@ -8,11 +8,15 @@ const PowerUp = require('./PowerUp');
 class GameRoom {
   constructor(roomId) {
     this.roomId = roomId;
-    this.map = new GameMap();
+    this.map = null;
+    this.mapSize = 'normal';
+    this.cols = 15;
+    this.rows = 13;
     this.players = new Map();
+    this.playerSkins = new Map(); // socketId -> skinId (stored before game starts)
     this.bombs = [];
     this.explosions = [];
-    this.activePowerUps = []; // power-ups visible on the map
+    this.activePowerUps = [];
     this.inputs = new Map();
     this.tickInterval = null;
     this.started = false;
@@ -21,11 +25,13 @@ class GameRoom {
     this.playerCount = 0;
   }
 
-  addPlayer(socketId, name) {
+  addPlayer(socketId, name, skinId) {
     if (this.playerCount >= MAX_PLAYERS) return null;
+    this.playerSkins.set(socketId, skinId || 0);
     const spawnIndex = this.playerCount;
-    const spawn = SPAWN_POSITIONS[spawnIndex];
-    const player = new Player(socketId, name, spawn.x, spawn.y, spawnIndex);
+    const spawns = getSpawnPositions(this.cols, this.rows);
+    const spawn = spawns[spawnIndex];
+    const player = new Player(socketId, name, spawn.x, spawn.y, skinId || 0);
     this.players.set(socketId, player);
     this.playerCount++;
     return player;
@@ -36,6 +42,7 @@ class GameRoom {
     if (player) {
       player.alive = false;
       this.players.delete(socketId);
+      this.playerSkins.delete(socketId);
       this.playerCount--;
     }
     if (this.started && this.playerCount === 0) {
@@ -44,7 +51,6 @@ class GameRoom {
   }
 
   handleInput(socketId, input) {
-    // Sticky bomb flag: preserve bomb request until consumed by tick
     const existing = this.inputs.get(socketId);
     if (existing && existing.bomb && !input.bomb) {
       this.inputs.set(socketId, { ...input, bomb: true });
@@ -53,8 +59,28 @@ class GameRoom {
     }
   }
 
-  start() {
+  start(mapSize) {
     if (this.started) return;
+
+    // Set map size
+    this.mapSize = mapSize || 'normal';
+    const sizeConfig = MAP_SIZES[this.mapSize] || MAP_SIZES.normal;
+    this.cols = sizeConfig.cols;
+    this.rows = sizeConfig.rows;
+
+    // Generate map
+    this.map = new GameMap(this.cols, this.rows);
+
+    // Reposition players to correct spawns for this map size
+    const spawns = getSpawnPositions(this.cols, this.rows);
+    let i = 0;
+    for (const [socketId, player] of this.players) {
+      const spawn = spawns[i];
+      player.x = spawn.x;
+      player.y = spawn.y;
+      i++;
+    }
+
     this.started = true;
     this.gameOver = false;
     const tickMs = 1000 / TICK_RATE;
@@ -75,6 +101,9 @@ class GameRoom {
     for (const [socketId, player] of this.players) {
       if (!player.alive) continue;
 
+      // Tick shield timer
+      player.tickShield(dt);
+
       const input = this.inputs.get(socketId);
       if (input) {
         player.applyInput(input);
@@ -92,7 +121,6 @@ class GameRoom {
           }
         }
 
-        // Clear bomb flag after processing
         this.inputs.set(socketId, { ...input, bomb: false });
       }
 
@@ -110,12 +138,10 @@ class GameRoom {
         const newX = player.x + dx * moveAmount;
         const newY = player.y + dy * moveAmount;
 
-        // Try full move first
         if (this.canMoveTo(player, newX, newY)) {
           player.x = newX;
           player.y = newY;
         } else {
-          // Axis-separated collision: try each axis independently
           let movedX = false, movedY = false;
 
           if (dx !== 0 && this.canMoveTo(player, newX, player.y)) {
@@ -127,8 +153,6 @@ class GameRoom {
             movedY = true;
           }
 
-          // Corner assist: if blocked on primary axis, nudge perpendicular
-          // axis toward nearest tile center to slide around corners
           const CORNER_THRESHOLD = 0.4;
           const NUDGE_SPEED = 3.0;
           const nudgeAmount = NUDGE_SPEED * (dt / 1000);
@@ -155,17 +179,10 @@ class GameRoom {
             }
           }
 
-          // Snap only if we didn't move at all
-          if (!movedX && dx !== 0) {
-            player.x = Math.round(player.x);
-          }
-          if (!movedY && dy !== 0) {
-            player.y = Math.round(player.y);
-          }
+          if (!movedX && dx !== 0) player.x = Math.round(player.x);
+          if (!movedY && dy !== 0) player.y = Math.round(player.y);
         }
 
-        // Auto-align: when moving along one axis, snap perpendicular axis
-        // toward tile center if very close (magnetic lane effect)
         const ALIGN_THRESHOLD = 0.15;
         const ALIGN_SPEED = 6.0;
         const alignAmount = ALIGN_SPEED * (dt / 1000);
@@ -186,7 +203,7 @@ class GameRoom {
         }
       }
 
-      // Update pass-through bombs (remove bombs player has left)
+      // Update pass-through bombs
       const currentTileKey = `${Math.round(player.x)},${Math.round(player.y)}`;
       for (const bombKey of player.passThroughBombs) {
         if (bombKey !== currentTileKey) {
@@ -204,7 +221,7 @@ class GameRoom {
       }
     }
 
-    // 3. Process detonations (including chain reactions)
+    // 3. Process detonations
     const detonated = new Set();
     while (detonationQueue.length > 0) {
       const bomb = detonationQueue.shift();
@@ -212,7 +229,6 @@ class GameRoom {
       detonated.add(bomb.key);
       bomb.exploded = true;
 
-      // Return bomb to player
       const owner = this.players.get(bomb.ownerId);
       if (owner) owner.activeBombs--;
 
@@ -222,7 +238,6 @@ class GameRoom {
 
       this.explosions.push(new Explosion(cells));
 
-      // Destroy bricks and reveal power-ups
       for (const brick of destroyedBricks) {
         this.map.setTile(brick.x, brick.y, EMPTY);
         const pu = this.map.revealPowerUp(brick.x, brick.y);
@@ -231,7 +246,6 @@ class GameRoom {
         }
       }
 
-      // Chain reaction
       for (const triggered of triggeredBombs) {
         if (!detonated.has(triggered.key)) {
           detonationQueue.push(triggered);
@@ -239,13 +253,12 @@ class GameRoom {
       }
     }
 
-    // Remove exploded bombs
     this.bombs = this.bombs.filter(b => !b.exploded);
 
     // 4. Update explosions
     this.explosions = this.explosions.filter(e => !e.tick(dt));
 
-    // 5. Check player deaths
+    // 5. Check player deaths (skip if shielded)
     const explosionCells = new Set();
     for (const explosion of this.explosions) {
       for (const cell of explosion.cells) {
@@ -255,6 +268,7 @@ class GameRoom {
 
     for (const [, player] of this.players) {
       if (!player.alive) continue;
+      if (player.hasShield) continue; // Shield protects from death
       const px = Math.round(player.x);
       const py = Math.round(player.y);
       if (explosionCells.has(`${px},${py}`)) {
@@ -284,7 +298,6 @@ class GameRoom {
   }
 
   canMoveTo(player, newX, newY) {
-    // Check collision with a small hitbox (0.35 radius)
     const r = 0.35;
     const corners = [
       { x: newX - r, y: newY - r },
@@ -299,7 +312,6 @@ class GameRoom {
 
       if (!this.map.isWalkable(tileX, tileY)) return false;
 
-      // Check bomb collision (but allow pass-through for own bombs)
       const bombKey = `${tileX},${tileY}`;
       if (!player.passThroughBombs.has(bombKey)) {
         const bombHere = this.bombs.some(b => b.x === tileX && b.y === tileY && !b.exploded);
@@ -325,6 +337,8 @@ class GameRoom {
   getStartState() {
     return {
       map: this.map.serialize(),
+      cols: this.cols,
+      rows: this.rows,
       players: [...this.players.values()].map(p => p.serialize())
     };
   }

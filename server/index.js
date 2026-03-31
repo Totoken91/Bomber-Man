@@ -21,8 +21,8 @@ io.on('connection', (socket) => {
   socket.emit('lobby:rooms', lobby.listRooms());
 
   // Create room
-  socket.on('lobby:create', ({ playerName }) => {
-    const { roomId, room } = lobby.createRoom(socket.id, playerName);
+  socket.on('lobby:create', ({ playerName, skinId }) => {
+    const { roomId, room } = lobby.createRoom(socket.id, playerName, skinId);
     socket.join(roomId);
     socket.emit('lobby:joined', { roomId, playerId: socket.id });
     io.emit('lobby:rooms', lobby.listRooms());
@@ -30,8 +30,8 @@ io.on('connection', (socket) => {
   });
 
   // Join room
-  socket.on('lobby:join', ({ roomId, playerName }) => {
-    const result = lobby.joinRoom(roomId, socket.id, playerName);
+  socket.on('lobby:join', ({ roomId, playerName, skinId }) => {
+    const result = lobby.joinRoom(roomId, socket.id, playerName, skinId);
     if (result.error) {
       socket.emit('lobby:error', result.error);
       return;
@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
   });
 
   // Start game
-  socket.on('game:start', () => {
+  socket.on('game:start', ({ mapSize } = {}) => {
     const room = lobby.getRoom(socket.id);
     const roomId = lobby.getRoomId(socket.id);
     if (!room || room.started) return;
@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    room.start();
+    room.start(mapSize);
 
     // Send start state to each player individually (with their ID)
     for (const [playerId] of room.players) {
@@ -116,7 +116,7 @@ function getPlayerList(room) {
   return [...room.players.values()].map(p => ({
     id: p.id,
     name: p.name,
-    colorIndex: p.colorIndex
+    skinId: p.skinId
   }));
 }
 

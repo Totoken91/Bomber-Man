@@ -1,6 +1,8 @@
 const Lobby = (() => {
   let currentRoomId = null;
   let isHost = false;
+  let selectedSkin = 0;
+  let selectedMapSize = 'normal';
 
   function init() {
     const btnCreate = document.getElementById('btn-create');
@@ -9,14 +11,26 @@ const Lobby = (() => {
     const btnBackLobby = document.getElementById('btn-back-lobby');
     const nameInput = document.getElementById('player-name');
 
+    // Build skin selector
+    buildSkinSelector();
+
+    // Map size buttons
+    document.querySelectorAll('.map-size-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.map-size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMapSize = btn.dataset.size;
+      });
+    });
+
     btnCreate.addEventListener('click', () => {
       const name = getPlayerName();
       if (!name) return;
-      Network.createRoom(name);
+      Network.createRoom(name, selectedSkin);
     });
 
     btnStart.addEventListener('click', () => {
-      Network.startGame();
+      Network.startGame(selectedMapSize);
     });
 
     btnLeave.addEventListener('click', () => {
@@ -35,7 +49,6 @@ const Lobby = (() => {
       showScreen('lobby-screen');
     });
 
-    // Enter key to create/join
     nameInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') btnCreate.click();
     });
@@ -47,7 +60,6 @@ const Lobby = (() => {
 
     Network.on('lobby:joined', ({ roomId, playerId }) => {
       currentRoomId = roomId;
-      // First player in room is host
       if (!isHost) {
         isHost = true;
       }
@@ -56,22 +68,47 @@ const Lobby = (() => {
 
     Network.on('lobby:players', (players) => {
       renderPlayerList(players);
-      // Show start button only for first player (host) and if 2+ players
       const socket = Network.getSocket();
       const amHost = players.length > 0 && players[0].id === socket.id;
       const btnStart = document.getElementById('btn-start');
       btnStart.style.display = (amHost && players.length >= 2) ? 'block' : 'none';
 
+      // Show map size selector only for host
+      const mapSizeSelector = document.getElementById('map-size-selector');
+      mapSizeSelector.style.display = amHost ? 'block' : 'none';
+
       const info = document.getElementById('waiting-info');
       if (players.length < 2) {
         info.textContent = 'En attente de joueurs... (min. 2)';
       } else {
-        info.textContent = amHost ? 'Appuie sur "Lancer la partie" !' : 'En attente du lancement...';
+        info.textContent = amHost ? 'Choisis la taille et lance !' : 'En attente du lancement...';
       }
     });
 
     Network.on('lobby:error', (msg) => {
       alert(msg);
+    });
+  }
+
+  function buildSkinSelector() {
+    const container = document.getElementById('skin-selector');
+    const skins = SpriteLoader.getSkins();
+
+    container.innerHTML = skins.map(skin => {
+      const spritePath = SpriteLoader.getSkinSpritePath(skin.id);
+      return `<img class="skin-item ${skin.id === selectedSkin ? 'selected' : ''}"
+                   data-skin-id="${skin.id}"
+                   src="${spritePath}"
+                   alt="${skin.name}"
+                   title="${skin.name}">`;
+    }).join('');
+
+    container.addEventListener('click', (e) => {
+      const item = e.target.closest('.skin-item');
+      if (!item) return;
+      selectedSkin = parseInt(item.dataset.skinId);
+      container.querySelectorAll('.skin-item').forEach(s => s.classList.remove('selected'));
+      item.classList.add('selected');
     });
   }
 
@@ -104,21 +141,22 @@ const Lobby = (() => {
   }
 
   function renderPlayerList(players) {
-    const colors = ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71'];
     const container = document.getElementById('players-list');
-    container.innerHTML = players.map(p => `
-      <div class="player-item">
-        <div class="player-color" style="background:${colors[p.colorIndex]}"></div>
-        <span>${p.name}</span>
-      </div>
-    `).join('');
+    container.innerHTML = players.map(p => {
+      const spritePath = SpriteLoader.getSkinSpritePath(p.skinId !== undefined ? p.skinId : 0);
+      return `
+        <div class="player-item">
+          <img class="player-skin" src="${spritePath}" alt="skin">
+          <span>${p.name}</span>
+        </div>`;
+    }).join('');
   }
 
   function joinRoom(roomId) {
     const name = getPlayerName();
     if (!name) return;
     isHost = false;
-    Network.joinRoom(roomId, name);
+    Network.joinRoom(roomId, name, selectedSkin);
   }
 
   function showScreen(screenId) {

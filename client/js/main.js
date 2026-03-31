@@ -28,6 +28,11 @@
       winnerName: null
     });
 
+    // Resize canvas to match map size
+    if (data.cols && data.rows) {
+      Renderer.resize(data.cols, data.rows);
+    }
+
     Lobby.showScreen('game-screen');
     gameRunning = true;
 

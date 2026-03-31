@@ -30,20 +30,20 @@ const Network = (() => {
     if (socket) socket.emit('input', input);
   }
 
-  function createRoom(playerName) {
-    if (socket) socket.emit('lobby:create', { playerName });
+  function createRoom(playerName, skinId) {
+    if (socket) socket.emit('lobby:create', { playerName, skinId });
   }
 
-  function joinRoom(roomId, playerName) {
-    if (socket) socket.emit('lobby:join', { roomId, playerName });
+  function joinRoom(roomId, playerName, skinId) {
+    if (socket) socket.emit('lobby:join', { roomId, playerName, skinId });
   }
 
   function leaveRoom() {
     if (socket) socket.emit('lobby:leave');
   }
 
-  function startGame() {
-    if (socket) socket.emit('game:start');
+  function startGame(mapSize) {
+    if (socket) socket.emit('game:start', { mapSize });
   }
 
   function on(event, callback) {

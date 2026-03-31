@@ -1,6 +1,4 @@
 module.exports = {
-  GRID_COLS: 15,
-  GRID_ROWS: 13,
   TILE_SIZE: 48,
   TICK_RATE: 20,
   BOMB_TIMER: 3000,
@@ -11,6 +9,7 @@ module.exports = {
   MAX_PLAYERS: 4,
   MIN_PLAYERS: 2,
   POWERUP_CHANCE: 0.3,
+  SHIELD_DURATION: 4000,
 
   // Tile types
   EMPTY: 0,
@@ -21,12 +20,22 @@ module.exports = {
   POWERUP_BOMB: 'bomb_up',
   POWERUP_FIRE: 'fire_up',
   POWERUP_SPEED: 'speed_up',
+  POWERUP_SHIELD: 'shield',
 
-  // Spawn positions (corners)
-  SPAWN_POSITIONS: [
-    { x: 1, y: 1 },
-    { x: 13, y: 1 },
-    { x: 1, y: 11 },
-    { x: 13, y: 11 }
-  ]
+  // Map sizes
+  MAP_SIZES: {
+    small:  { cols: 11, rows: 9 },
+    normal: { cols: 15, rows: 13 },
+    large:  { cols: 19, rows: 15 }
+  },
+
+  // Spawn positions are calculated dynamically based on map size
+  getSpawnPositions(cols, rows) {
+    return [
+      { x: 1, y: 1 },
+      { x: cols - 2, y: 1 },
+      { x: 1, y: rows - 2 },
+      { x: cols - 2, y: rows - 2 }
+    ];
+  }
 };

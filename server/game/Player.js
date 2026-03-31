@@ -1,7 +1,7 @@
-const { DEFAULT_SPEED, DEFAULT_BOMB_RANGE, DEFAULT_MAX_BOMBS } = require('./constants');
+const { DEFAULT_SPEED, DEFAULT_BOMB_RANGE, DEFAULT_MAX_BOMBS, SHIELD_DURATION } = require('./constants');
 
 class Player {
-  constructor(id, name, spawnX, spawnY, colorIndex) {
+  constructor(id, name, spawnX, spawnY, skinId) {
     this.id = id;
     this.name = name;
     this.x = spawnX;
@@ -12,8 +12,13 @@ class Player {
     this.bombRange = DEFAULT_BOMB_RANGE;
     this.alive = true;
     this.direction = null;
-    this.colorIndex = colorIndex;
-    this.passThroughBombs = new Set(); // bomb keys player is standing on
+    this.skinId = skinId || 0;
+    this.passThroughBombs = new Set();
+    this.shieldTimer = 0;
+  }
+
+  get hasShield() {
+    return this.shieldTimer > 0;
   }
 
   applyInput(input) {
@@ -23,6 +28,13 @@ class Player {
 
   canPlaceBomb() {
     return this.alive && this.activeBombs < this.maxBombs;
+  }
+
+  tickShield(dt) {
+    if (this.shieldTimer > 0) {
+      this.shieldTimer -= dt;
+      if (this.shieldTimer < 0) this.shieldTimer = 0;
+    }
   }
 
   applyPowerUp(type) {
@@ -36,6 +48,9 @@ class Player {
       case 'speed_up':
         this.speed += 0.8;
         break;
+      case 'shield':
+        this.shieldTimer = SHIELD_DURATION;
+        break;
     }
   }
 
@@ -46,7 +61,8 @@ class Player {
       x: this.x,
       y: this.y,
       alive: this.alive,
-      colorIndex: this.colorIndex
+      skinId: this.skinId,
+      hasShield: this.hasShield
     };
   }
 }
