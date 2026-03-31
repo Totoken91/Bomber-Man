@@ -11,9 +11,9 @@ const SpriteLoader = (() => {
     wall_fortress:   'tile_0035.png',
     brick_fortress:  'tile_0065.png',
     // Crypt theme
-    floor_crypt:     'tile_0030.png',
-    wall_crypt:      'tile_0025.png',
-    brick_crypt:     'tile_0070.png',
+    floor_crypt:     'tile_0050.png',
+    wall_crypt:      'tile_0003.png',
+    brick_crypt:     'tile_0075.png',
     // Skins (selectable characters)
     skin_0:          'tile_0097.png',
     skin_1:          'tile_0108.png',
